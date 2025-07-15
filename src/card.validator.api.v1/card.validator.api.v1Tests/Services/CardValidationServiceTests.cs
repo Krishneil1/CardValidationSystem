@@ -58,7 +58,7 @@ namespace card.validator.api.v1.Tests.Services
         [TestMethod]
         public void ValidateNullInputReturnsInvalid()
         {
-            var result = service!.Validate("");
+            var result = service!.Validate(null!);
 
             Assert.AreEqual("Unknown", result.CardType);
             Assert.IsFalse(result.IsValid);

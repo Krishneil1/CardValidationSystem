@@ -110,4 +110,8 @@ public class ValidateCardCommandHandlerTests
         Assert.IsFalse(result.IsValid);
         Assert.AreEqual(string.Empty, result.FormattedNumber);
     }
+    // TODO: Add test for null command input (e.g., new ValidateCardCommand(null))
+    // TODO: Add test for invalid card format (e.g., alphanumeric input)
+    // TODO: Add test for extremely long card number
+    // TODO: Add test for logging behavior when exception is thrown
 }
