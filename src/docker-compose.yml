@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  card-validator-api:
+    build:
+      context: .
+      dockerfile: card.validator.api.v1/Dockerfile
+    ports:
+      - "5105:5105"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

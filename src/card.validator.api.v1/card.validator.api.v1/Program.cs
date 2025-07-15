@@ -16,6 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 // MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
+// Read CORS origins directly from config
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
 // AutoMapper
 builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 // Add services to the container.
@@ -24,8 +27,21 @@ builder.Services.AddScoped<ICardValidationService, CardValidationService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowConfiguredOrigins", policy =>
+    {
+        policy.WithOrigins(allowedOrigins!)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 
 var app = builder.Build();
+
+// Apply CORS
+app.UseCors("AllowConfiguredOrigins");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -34,7 +50,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+else
+{
+    app.UseHttpsRedirection();
+}
+
 app.MapValidateCardEndpoint();
 
 
