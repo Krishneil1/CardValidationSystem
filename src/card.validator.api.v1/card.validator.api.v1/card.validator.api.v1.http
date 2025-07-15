@@ -1,0 +1,6 @@
+@card.validator.api.v1_HostAddress = http://localhost:5105
+
+GET {{card.validator.api.v1_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
