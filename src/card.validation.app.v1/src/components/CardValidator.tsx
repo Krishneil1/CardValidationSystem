@@ -1,85 +1,73 @@
-import React, { useState } from 'react';
-import { CardValidationResultDto } from '../types/CardValidationResultDto';
+// src/components/CardValidator.tsx
+
+import React, { useState } from "react";
+
+interface CardValidationResultDto {
+  cardType: string;
+  isValid: boolean;
+  formattedNumber: string;
+}
 
 const CardValidator: React.FC = () => {
-  const [cardNumber, setCardNumber] = useState('');
+  const [cardNumber, setCardNumber] = useState("");
   const [result, setResult] = useState<CardValidationResultDto | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleValidate = async () => {
-    setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cards/validate`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cards/validate`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ cardNumber }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
+      if (!response.ok) {
+        throw new Error("API request failed");
       }
 
-      const data: CardValidationResultDto = await res.json();
+      const data: CardValidationResultDto = await response.json();
       setResult(data);
-    } catch (err: any) {
-      setError(err.message || 'Unknown error');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      setError("Failed to validate card. Please try again.");
     }
   };
 
   return (
-    <div className="container py-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">Credit Card Validator</h5>
-            </div>
-            <div className="card-body">
-              <div className="mb-3">
-                <label htmlFor="cardNumber" className="form-label">
-                  Enter Card Number
-                </label>
-                <input
-                  id="cardNumber"
-                  className="form-control"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  placeholder="e.g. 4111111111111111"
-                />
-              </div>
+    <div className="card card-validator-wrapper shadow-sm p-4 bg-white rounded">
+      <div className="card-header bg-primary text-white text-center fw-bold">
+        Credit Card Validator
+      </div>
 
-              <button
-                className="btn btn-success w-100"
-                onClick={handleValidate}
-                disabled={!cardNumber || loading}
-              >
-                {loading ? 'Validating...' : 'Validate Card'}
-              </button>
-
-              {result && (
-                <div className="alert alert-info mt-4">
-                  <p><strong>Card Type:</strong> {result.cardType}</p>
-                  <p><strong>Valid:</strong> {result.isValid ? '✅ Yes' : '❌ No'}</p>
-                  <p><strong>Formatted:</strong> {result.formattedNumber}</p>
-                </div>
-              )}
-
-              {error && (
-                <div className="alert alert-danger mt-4">
-                  {error}
-                </div>
-              )}
-            </div>
-          </div>
+      <div className="card-body">
+        <div className="mb-3">
+          <label htmlFor="cardNumber" className="form-label">Enter Card Number</label>
+          <input
+            id="cardNumber"
+            type="text"
+            className="form-control"
+            value={cardNumber}
+            onChange={(e) => setCardNumber(e.target.value)}
+          />
         </div>
+
+        <button className="btn btn-success w-100" onClick={handleValidate}>
+          Validate Card
+        </button>
+
+        {error && <div className="alert alert-danger mt-3">{error}</div>}
+
+        {result && (
+          <div className="alert alert-info mt-3">
+            <p><strong>Card Type:</strong> {result.cardType}</p>
+            <p><strong>Valid:</strong> {result.isValid ? "✅ Yes" : "❌ No"}</p>
+            <p><strong>Formatted:</strong> {result.formattedNumber}</p>
+          </div>
+        )}
       </div>
     </div>
   );
