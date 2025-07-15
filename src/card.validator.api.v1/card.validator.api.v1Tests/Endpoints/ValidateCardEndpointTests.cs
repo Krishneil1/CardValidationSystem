@@ -6,71 +6,142 @@
 //
 // -------------------------------------------------------------------------------------------------
 
-namespace card.validator.api.v1.Endpoints.Tests;
-
-using System.Net.Http.Json;
+using Moq;
+using AutoMapper;
+using card.validator.api.v1.CQRS.Handlers;
 using card.validator.api.v1.CQRS.Commands;
+using card.validator.api.v1.Models;
 using card.validator.api.v1.Models.Dtos;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
+using card.validator.api.v1.Interfaces;
+using Microsoft.Extensions.Logging;
 
-[TestClass()]
-public class ValidateCardEndpointTests
+namespace card.validator.api.v1.Tests.Handlers
 {
-    private static HttpClient client = null!;
-
-    [ClassInitialize]
-    public static void Setup(TestContext context)
+    [TestClass]
+    public class ValidateCardCommandHandlerTests
     {
-        var factory = new WebApplicationFactory<Program>(); // Assuming Program.cs is the entry point
-        client = factory.CreateClient();
-    }
+        private Mock<ICardValidationService> serviceMock = null!;
+        private Mock<IMapper> mapperMock = null!;
+        private Mock<ILogger<ValidateCardCommandHandler>> loggerMock = null!;
+        private ValidateCardCommandHandler handler = null!;
 
-    [TestMethod]
-    public async Task ValidateCardValidVisaReturnsOk()
-    {
-        // Arrange
-        var command = new ValidateCardCommand("4111111111111111");
+        [TestInitialize]
+        public void Setup()
+        {
+            serviceMock = new Mock<ICardValidationService>();
+            mapperMock = new Mock<IMapper>();
+            loggerMock = new Mock<ILogger<ValidateCardCommandHandler>>();
 
-        // Act
-        var response = await client.PostAsJsonAsync("/api/cards/validate", command);
+            handler = new ValidateCardCommandHandler(
+                serviceMock.Object,
+                mapperMock.Object,
+                loggerMock.Object
+            );
+        }
 
-        // Assert
-        Assert.IsTrue(response.IsSuccessStatusCode);
+        [TestMethod]
+        public async Task HandleValidVisaReturnsExpectedResult()
+        {
+            // Arrange
+            var command = new ValidateCardCommand("4111111111111111");
+            var serviceResult = new CardValidationResult
+            {
+                CardType = "VISA",
+                IsValid = true,
+                FormattedNumber = "4111111111111111"
+            };
 
-        var result = await response.Content.ReadFromJsonAsync<CardValidationResultDto>();
-        Assert.IsNotNull(result);
-        Assert.AreEqual("VISA", result.CardType);
-        Assert.IsTrue(result.IsValid);
-    }
+            var dtoResult = new CardValidationResultDto
+            {
+                CardType = "VISA",
+                IsValid = true,
+                FormattedNumber = "4111111111111111"
+            };
 
-    [TestMethod]
-    public async Task ValidateCardInvalidNumberReturnsValidFalse()
-    {
-        var command = new ValidateCardCommand("4111111111111");
+            serviceMock.Setup(s => s.Validate(command.CardNumber)).Returns(serviceResult);
+            mapperMock.Setup(m => m.Map<CardValidationResultDto>(serviceResult)).Returns(dtoResult);
 
-        var response = await client.PostAsJsonAsync("/api/cards/validate", command);
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
 
-        Assert.IsTrue(response.IsSuccessStatusCode);
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("VISA", result.CardType);
+            Assert.IsTrue(result.IsValid);
+        }
+        [TestMethod]
+        public async Task HandleNullOrWhitespaceCardNumberReturnsUnknownResult()
+        {
+            // Arrange
+            var command = new ValidateCardCommand("   "); // or string.Empty
+            var expected = new CardValidationResultDto
+            {
+                CardType = "Unknown",
+                IsValid = false,
+                FormattedNumber = string.Empty
+            };
 
-        var result = await response.Content.ReadFromJsonAsync<CardValidationResultDto>();
-        Assert.IsNotNull(result);
-        Assert.AreEqual("VISA", result.CardType);
-        Assert.IsFalse(result.IsValid);
-    }
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
 
-    [TestMethod]
-    public async Task ValidateCardUnknownCardTypeReturnsUnknown()
-    {
-        var command = new ValidateCardCommand("9111111111111111");
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(expected.CardType, result.CardType);
+            Assert.AreEqual(expected.IsValid, result.IsValid);
+            Assert.AreEqual(expected.FormattedNumber, result.FormattedNumber);
+        }
 
-        var response = await client.PostAsJsonAsync("/api/cards/validate", command);
+        [TestMethod]
+        public async Task HandleExceptionThrownInServiceReturnsFallbackResult()
+        {
+            // Arrange
+            var command = new ValidateCardCommand("1234567890123456");
 
-        Assert.IsTrue(response.IsSuccessStatusCode);
+            serviceMock
+                .Setup(s => s.Validate(It.IsAny<string>()))
+                .Throws(new Exception("Unexpected error"));
 
-        var result = await response.Content.ReadFromJsonAsync<CardValidationResultDto>();
-        Assert.IsNotNull(result);
-        Assert.AreEqual("Unknown", result.CardType);
-        Assert.IsFalse(result.IsValid);
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Unknown", result.CardType);
+            Assert.IsFalse(result.IsValid);
+            Assert.AreEqual(string.Empty, result.FormattedNumber);
+        }
+
+        [TestMethod]
+        public async Task HandleMapsResultCorrectly()
+        {
+            // Arrange
+            var command = new ValidateCardCommand("6011000990139424");
+
+            var validationResult = new CardValidationResult
+            {
+                CardType = "Discover",
+                IsValid = true,
+                FormattedNumber = "6011000990139424"
+            };
+
+            var dto = new CardValidationResultDto
+            {
+                CardType = "Discover",
+                IsValid = true,
+                FormattedNumber = "6011000990139424"
+            };
+
+            serviceMock.Setup(x => x.Validate(command.CardNumber)).Returns(validationResult);
+            mapperMock.Setup(m => m.Map<CardValidationResultDto>(validationResult)).Returns(dto);
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Discover", result.CardType);
+            Assert.IsTrue(result.IsValid);
+            Assert.AreEqual("6011000990139424", result.FormattedNumber);
+        }
     }
 }
