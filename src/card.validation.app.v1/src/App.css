@@ -1,6 +1,7 @@
 body, html {
   background-color: #f2f2f2;
   min-height: 100vh;
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -16,10 +17,46 @@ body, html {
   align-items: center;
   height: 100%;
 }
+
 .card-validator-wrapper {
   width: 40rem;
 }
 
 .card-validator-wrapper .card-header {
   font-weight: bold;
+}
+
+.result-box {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.4s ease;
+}
+
+.result-box.show {
+  max-height: 300px;
+  opacity: 1;
+}
+
+.result-success {
+  background-color: #d4edda;
+  border-left: 5px solid #28a745;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+
+.result-fail {
+  background-color: #f8d7da;
+  border-left: 5px solid #dc3545;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+.result-unknown {
+  background-color: #fff3cd;
+  border-left: 5px solid #ffc107;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
 }

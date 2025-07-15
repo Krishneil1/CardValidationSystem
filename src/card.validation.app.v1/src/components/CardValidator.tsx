@@ -1,5 +1,3 @@
-// src/components/CardValidator.tsx
-
 import React, { useState } from "react";
 
 interface CardValidationResultDto {
@@ -59,15 +57,28 @@ const CardValidator: React.FC = () => {
           Validate Card
         </button>
 
-        {error && <div className="alert alert-danger mt-3">{error}</div>}
+        <div className={`result-box ${result || error ? "show" : ""}`}>
+          {error && (
+            <div className="result-fail mt-3">{error}</div>
+          )}
 
-        {result && (
-          <div className="alert alert-info mt-3">
-            <p><strong>Card Type:</strong> {result.cardType}</p>
-            <p><strong>Valid:</strong> {result.isValid ? "✅ Yes" : "❌ No"}</p>
-            <p><strong>Formatted:</strong> {result.formattedNumber}</p>
-          </div>
-        )}
+          {result && (
+            <div
+              className={
+                result.cardType === "Unknown"
+                  ? "result-unknown"
+                  : result.isValid
+                  ? "result-success"
+                  : "result-fail"
+              }
+            >
+              <p><strong>Card Type:</strong> {result.cardType}</p>
+              <p><strong>Valid:</strong> {result.isValid ? "✅ Yes" : "❌ No"}</p>
+              <p><strong>Formatted:</strong> {result.formattedNumber}</p>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
