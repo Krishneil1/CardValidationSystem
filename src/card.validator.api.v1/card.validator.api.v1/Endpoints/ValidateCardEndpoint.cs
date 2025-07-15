@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 //
 // ValidateCardEndpoint.cs -- The ValidateCardEndpoint.cs class.
 //
@@ -28,5 +28,15 @@ public static class ValidateCardEndpoint
         .Produces<CardValidationResultDto>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status400BadRequest)
         .WithOpenApi();
+
+        // TODO: Add rate limiting middleware to prevent abuse or brute-force attempts
+
+        // TODO: Add input logging with masking (e.g., show only last 4 digits of card)
+
+        // TODO: Return 422 Unprocessable Entity for invalid formats instead of 400
+
+        // TODO: Consider returning ProblemDetails for better error structure in failures
+
+        // TODO: Implement API versioning if future versions introduce new fields like CVV/expiry validation
     }
 }

@@ -53,6 +53,10 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseHttpsRedirection();
+    // TODO: Add OWASP recommended headers for production hardening
+    // Use `OwaspHeaders.Core` NuGet package:
+    // https://www.nuget.org/packages/OwaspHeaders.Core/
+    // app.UseOwaspHeaders();  // Enable after installing the package
 }
 
 app.MapValidateCardEndpoint();
